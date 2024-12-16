@@ -61,7 +61,7 @@ fn get_file_info(path: &std::path::PathBuf){
         println!("File size: {} KB", file_size / 1000);
     }
 
-    println!("Creation time: {}", ctime);
+    //println!("Creation time: {}", ctime);
     println!("Last modification time: {}", mtime);
     println!("Last access time: {}", atime);
 }
