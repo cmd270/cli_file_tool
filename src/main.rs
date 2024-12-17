@@ -5,11 +5,7 @@ use filetime::FileTime;
 use clap::Parser;
 use anyhow::{Context, Result};
 
-#[derive(Parser)]
-struct Cli{
-    path: std::path::PathBuf,
-    pattern: String,
-}
+mod dateconveter;
 
 macro_rules! format_array {
     ($arr:expr, $fmt:expr) => {
@@ -18,6 +14,43 @@ macro_rules! format_array {
             .collect::<Vec<_>>()
             .join(", ")
     };
+}
+
+#[derive(Parser)]
+struct Cli{
+    path: std::path::PathBuf,
+    pattern: String,
+}
+
+fn get_file_info(path: &std::path::PathBuf){
+    let metadata = fs::metadata(path).unwrap();
+
+    let ctime = dateconveter::from_unix_to_datetime(
+        FileTime::from_creation_time(&metadata)
+        .unwrap()
+        .unix_seconds()
+    );
+    
+    let mtime = dateconveter::from_unix_to_datetime(
+        FileTime::from_last_modification_time(&metadata)
+        .unix_seconds()
+    );
+
+    let atime = dateconveter::from_unix_to_datetime(
+        FileTime::from_last_access_time(&metadata)
+        .unix_seconds()
+    );
+
+    let file_size = metadata.len();
+
+    println!("File name: {} 🍣", path.file_name()
+        .unwrap()
+        .to_string_lossy()
+    );
+    println!("Size: {} bytes", file_size);
+    println!("Creation time: {}", ctime);
+    println!("Last modification time: {}", mtime);
+    println!("Last access time: {}", atime);
 }
 
 fn find_positions(line: &str, pattern: &str) -> Vec<usize>{
@@ -41,29 +74,11 @@ fn find_matches(content: &str, pattern: &str){
         }
         total_lines += 1;
         let positions = find_positions(&line, &pattern);
-        println!("l: {}, p: {} | {}", index + 1, format_array!(&positions, "{}"), line);
+        println!("ln: {}, col: {} | `{}`", index + 1, format_array!(&positions, "{}"), line);
     }
 
     println!("Pattern `{}` found in {} lines.", pattern, total_lines);
     
-}
-
-fn get_file_info(path: &std::path::PathBuf){
-    let metadata = fs::metadata(path).unwrap();
-    let ctime = FileTime::from_creation_time(&metadata);
-    let mtime = FileTime::from_last_modification_time(&metadata);
-    let atime = FileTime::from_last_access_time(&metadata);
-    let file_size = metadata.len();
-    
-    if  file_size / 1000  == 0 {
-        println!("File size: {} bytes", file_size);
-    } else {
-        println!("File size: {} KB", file_size / 1000);
-    }
-
-    //println!("Creation time: {}", ctime);
-    println!("Last modification time: {}", mtime);
-    println!("Last access time: {}", atime);
 }
 
 fn main() -> Result<()> {
